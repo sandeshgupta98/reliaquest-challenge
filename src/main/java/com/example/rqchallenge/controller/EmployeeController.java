@@ -13,6 +13,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/employees")
@@ -25,7 +26,7 @@ public class EmployeeController{
 
     //localhost:8080/employees
     @GetMapping
-    public ResponseEntity<Object> getAllEmployees() {
+    public ResponseEntity<List<Employee>> getAllEmployees(){
         try {
             logger.debug("Request to get all employees");
             List<Employee> employees = employeeService.getAllEmployees();
@@ -33,16 +34,18 @@ public class EmployeeController{
             return ResponseEntity.ok(employees);
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     //localhost:8080/employees/search?name=Garrett Winters
     @GetMapping("/search")
-    public ResponseEntity<Object> getEmployeesByNameSearch(@RequestParam String name) {
+    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(@RequestParam String name) {
         try {
             logger.debug("Searching employees by name: {}", name);
             List<Employee> employees = employeeService.getEmployeesByNameSearch(name);
@@ -50,33 +53,37 @@ public class EmployeeController{
             return ResponseEntity.ok(employees);
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     //localhost:8080/employees/10
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getEmployeeById(@PathVariable String id) {
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable String id) {
         try {
             logger.debug("Request to get employee by ID: {}", id);
             EmployeeByIdResponse employee = employeeService.getEmployeeById(id);
             logger.info("Employee {} with ID: {} retrieved successfully",employee.getData(), id);
-            return ResponseEntity.ok(employee);
+            return ResponseEntity.ok(employee.getData());
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     //localhost:8080/employees/highest-salary
     @GetMapping("/highest-salary")
-    public ResponseEntity<Object> getHighestSalaryOfEmployees() {
+    public ResponseEntity<Integer> getHighestSalaryOfEmployees() {
         try {
             logger.debug("Request to get highest salary among all employees");
             int highestSalary = employeeService.getHighestSalaryOfEmployees();
@@ -84,27 +91,32 @@ public class EmployeeController{
             return ResponseEntity.ok(highestSalary);
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     //localhost:8080/employees/top-10-highest-earning
     @GetMapping("/top-10-highest-earning")
-    public ResponseEntity<Object> getTop10HighestEarningEmployeeNames() {
+    public ResponseEntity<List<String>> getTopTenHighestEarningEmployeeNames() {
         try {
             logger.debug("Request to get top 10 highest earning employees");
             List<Employee> employees = employeeService.getTopHighestEarningEmployees(10);
+            List<String> employeeNames = employees.stream().map(Employee::getEmployeeName).collect(Collectors.toList());
             logger.info("Top 10 highest earning employees retrieved successfully");
-            return ResponseEntity.ok(employees);
+            return ResponseEntity.ok(employeeNames);
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
@@ -112,24 +124,26 @@ public class EmployeeController{
    localhost:8080/employees/create
    */
     @PostMapping("/create")
-    public ResponseEntity<Object> createEmployee(@RequestBody Employee employee) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee) {
         try {
             logger.debug("Request to create new employee: {}", employee);
             EmployeeByIdResponse savedEmployee = employeeService.createEmployee(employee);
             logger.info("Employee created successfully: {}", savedEmployee);
-            return new ResponseEntity<>("SUCCESS", HttpStatus.CREATED);
+            return new ResponseEntity<>(savedEmployee.getData(), HttpStatus.CREATED);
         }
         catch (HttpClientErrorException | HttpServerErrorException e) {
-            return handleException(e, e.getMessage(), e.getStatusCode());
+            logger.error(e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         }
         catch (Exception e) {
-            return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     //localhost:8080/employees/1
    @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteEmployee(@PathVariable String id) {
+    public ResponseEntity<String> deleteEmployeeById(@PathVariable String id) {
        try {
            logger.debug("Request to delete employee by ID: {}", id);
            employeeService.deleteEmployee(id);
@@ -137,16 +151,12 @@ public class EmployeeController{
            return ResponseEntity.ok("Employee with id "+ id+" got deleted successfully");
        }
        catch (HttpClientErrorException | HttpServerErrorException e) {
-           return handleException(e, e.getMessage(), e.getStatusCode());
+           logger.error(e.getMessage());
+           return ResponseEntity.status(e.getStatusCode()).body(null);
        }
        catch (Exception e) {
-           return handleException(e, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+           logger.error(e.getMessage());
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
        }
-    }
-
-    private ResponseEntity<Object> handleException(Exception e, String errorMessage, HttpStatus status) {
-
-        logger.error(errorMessage, e);
-        return ResponseEntity.status(status).body(errorMessage);
     }
 }
