@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/employees")
-public class EmployeeController{
+public class EmployeeController implements IEmployeeController{
 
     @Autowired
     EmployeeService employeeService;
